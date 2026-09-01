@@ -76,6 +76,9 @@ Form A ──► Form B ──► Form D ──┐
 - Two ids on every node
   - Traversal must use `nodes[].id` (`form-…`) as that is what `prerequisites` reference
   - `nodes[].data.id` (`bp_c_…`) is the component's id and is not referenced
+- Every referenced id must resolve
+  - Each `prerequisites` entry must name a `nodes[].id`, and each `component_id` must name a `forms[].id`
+  - A reference that resolves to nothing means the payload is corrupt; lookups throw an error naming the missing id, the referring node, and the graph rather than returning a partial result
 - Nodes arrive unsorted: payload order is F, D, A, C, B, E.
 - Traversal must deduplicate
   - F reaches A by two paths (via D and via E)
