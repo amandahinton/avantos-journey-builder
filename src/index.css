@@ -8,3 +8,13 @@ body {
   margin: 0;
   padding: 1rem;
 }
+
+.columns {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+[aria-current="true"] {
+  font-weight: bold;
+}

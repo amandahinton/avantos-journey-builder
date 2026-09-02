@@ -1,4 +1,7 @@
+import { useState } from "react"
 import { useBlueprintGraph } from "./api/useBlueprintGraph"
+import FormList from "./components/FormList"
+import PrefillPanel from "./components/PrefillPanel"
 
 const TENANT_ID = "1"
 const BLUEPRINT_ID = "2"
@@ -8,12 +11,27 @@ export default function App() {
     tenantId: TENANT_ID,
     blueprintId: BLUEPRINT_ID,
   })
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+
   return (
     <>
       <h1>Journey Builder</h1>
       {error && <p role="alert">{error}</p>}
       {!error && !graph && <p>Loading…</p>}
-      {graph && <pre>{JSON.stringify(graph, null, 2)}</pre>}
+      {graph && (
+        <div className="columns">
+          <FormList
+            nodes={graph.nodes}
+            onSelect={setSelectedNodeId}
+            selectedNodeId={selectedNodeId}
+          />
+          {selectedNodeId ? (
+            <PrefillPanel graph={graph} nodeId={selectedNodeId} />
+          ) : (
+            <p>Select a form</p>
+          )}
+        </div>
+      )}
     </>
   )
 }
