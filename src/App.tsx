@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useBlueprintGraph } from "./api/useBlueprintGraph"
 import FormList from "./components/FormList"
 import PrefillPanel from "./components/PrefillPanel"
+import { dataSourcesRegistry } from "./prefill/dataSourcesRegistry"
 
 const TENANT_ID = "1"
 const BLUEPRINT_ID = "2"
@@ -26,7 +27,11 @@ export default function App() {
             selectedNodeId={selectedNodeId}
           />
           {selectedNodeId ? (
-            <PrefillPanel graph={graph} nodeId={selectedNodeId} />
+            <PrefillPanel
+              graph={graph}
+              nodeId={selectedNodeId}
+              sources={dataSourcesRegistry}
+            />
           ) : (
             <p>Select a form</p>
           )}

@@ -1,42 +1,49 @@
 import { getFormForNode, getNodeById } from "../graph/lookup"
-import {
-  getDirectDependencies,
-  getTransitiveDependencies,
-} from "../graph/traversal"
+import type { PrefillDataSource } from "../prefill/types"
 import type { BlueprintGraph } from "../types/graph"
 
 interface PrefillPanelProps {
   graph: BlueprintGraph
   nodeId: string
+  sources: PrefillDataSource[]
 }
 
-export default function PrefillPanel({ graph, nodeId }: PrefillPanelProps) {
+export default function PrefillPanel({
+  graph,
+  nodeId,
+  sources,
+}: PrefillPanelProps) {
   const node = getNodeById({ graph, nodeId })
   const form = getFormForNode({ graph, node })
   const fieldKeys = Object.keys(form.field_schema.properties)
-
-  const directDependencyText = getDirectDependencies({ graph, nodeId })
-    .map((dependencyNode) => dependencyNode.data.name)
-    .join(", ")
-
-  const transitiveDependencyText = getTransitiveDependencies({ graph, nodeId })
-    .map((dependencyNode) => dependencyNode.data.name)
-    .join(", ")
 
   return (
     <section>
       <h2>{node.data.name}</h2>
 
       <h3>Fields</h3>
-      <ul>
+      <ul aria-label="Fields">
         {fieldKeys.map((fieldKey) => (
           <li key={fieldKey}>{fieldKey}</li>
         ))}
       </ul>
 
-      <h3>Dependencies</h3>
-      <p>Direct dependencies: {directDependencyText}</p>
-      <p>Transitive dependencies: {transitiveDependencyText}</p>
+      <h3>Available data</h3>
+      {sources.map((dataSource) => (
+        <section key={dataSource.id}>
+          <h4>{dataSource.label}</h4>
+          {dataSource.getDataGroups({ graph, nodeId }).map((dataGroup) => (
+            <div key={dataGroup.id}>
+              <p>{dataGroup.label}</p>
+              <ul aria-label={dataGroup.label}>
+                {dataGroup.dataElements.map((dataElement) => (
+                  <li key={dataElement.id}>{dataElement.label}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))}
     </section>
   )
 }

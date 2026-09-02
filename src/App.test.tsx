@@ -64,16 +64,14 @@ describe("App", () => {
     expect(screen.queryByText("Select a form")).not.toBeInTheDocument()
   })
 
-  it("shows dependencies for clicked form", async () => {
+  it("shows available data for clicked form", async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(await screen.findByRole("button", { name: "Form D" }))
 
-    expect(screen.getByText("Direct dependencies: Form B")).toBeInTheDocument()
-    expect(
-      screen.getByText("Transitive dependencies: Form A"),
-    ).toBeInTheDocument()
+    expect(screen.getByRole("list", { name: "Form B" })).toBeInTheDocument()
+    expect(screen.getByRole("list", { name: "Global" })).toBeInTheDocument()
   })
 
   it("shows loading message, then error message when fetch fails", async () => {

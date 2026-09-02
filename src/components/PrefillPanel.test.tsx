@@ -1,11 +1,19 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import graph from "../fixtures/graph.json"
 import { findNodeByName } from "../graph/testHelpers"
+import { dataSourcesRegistry } from "../prefill/dataSourcesRegistry"
 import PrefillPanel from "./PrefillPanel"
+import type { PrefillDataSource } from "../prefill/types"
 
 function renderPanelFor(name: string) {
-  render(<PrefillPanel graph={graph} nodeId={findNodeByName(name).id} />)
+  render(
+    <PrefillPanel
+      graph={graph}
+      nodeId={findNodeByName(name).id}
+      sources={dataSourcesRegistry}
+    />,
+  )
 }
 
 describe("PrefillPanel", () => {
@@ -18,7 +26,8 @@ describe("PrefillPanel", () => {
   it("lists field keys of form template in schema order", () => {
     renderPanelFor("Form D")
 
-    const fieldKeys = screen
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+    const fieldKeys = within(fieldsList)
       .getAllByRole("listitem")
       .map((listItem) => listItem.textContent)
 
@@ -34,30 +43,62 @@ describe("PrefillPanel", () => {
     ])
   })
 
-  it("shows one direct and one transitive dependency for Form D, a simple chain", () => {
+  it("shows dataGroups from every given source for Form D, which has both direct and transitive dependencies", () => {
     renderPanelFor("Form D")
 
-    expect(screen.getByText("Direct dependencies: Form B")).toBeInTheDocument()
+    const formBList = screen.getByRole("list", { name: "Form B" })
+    const formAList = screen.getByRole("list", { name: "Form A" })
+    const globalList = screen.getByRole("list", { name: "Global" })
+
+    expect(within(formBList).getByText("email")).toBeInTheDocument()
+    expect(within(formAList).getByText("email")).toBeInTheDocument()
     expect(
-      screen.getByText("Transitive dependencies: Form A"),
+      within(globalList).getByText("organization_name"),
     ).toBeInTheDocument()
   })
 
-  it("shows multiple dependencies for Form F, where two paths reconverge, in traversal order", () => {
-    renderPanelFor("Form F")
+  it("shows only dataGroups from given sources for Form D, which has both direct and transitive dependencies", () => {
+    const sourcesWithoutGlobal = dataSourcesRegistry.filter(
+      (dataSource) => dataSource.id !== "global-data",
+    )
 
-    expect(
-      screen.getByText("Direct dependencies: Form D, Form E"),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText("Transitive dependencies: Form B, Form C, Form A"),
-    ).toBeInTheDocument()
+    render(
+      <PrefillPanel
+        graph={graph}
+        nodeId={findNodeByName("Form D").id}
+        sources={sourcesWithoutGlobal}
+      />,
+    )
+
+    expect(screen.queryByText("Global data")).not.toBeInTheDocument()
+    expect(screen.getByRole("list", { name: "Form B" })).toBeInTheDocument()
   })
 
-  it("shows no dependency names for Form A, the start of the journey", () => {
-    renderPanelFor("Form A")
+  it("shows dataGroups from any source satisfying the contract for given node", () => {
+    const testSource: PrefillDataSource = {
+      getDataGroups() {
+        return [
+          {
+            dataElements: [{ id: "test_element", label: "test_element" }],
+            id: "test-group",
+            label: "Test group",
+          },
+        ]
+      },
+      id: "test-source",
+      label: "Test source",
+    }
 
-    expect(screen.getByText("Direct dependencies:")).toBeInTheDocument()
-    expect(screen.getByText("Transitive dependencies:")).toBeInTheDocument()
+    render(
+      <PrefillPanel
+        graph={graph}
+        nodeId={findNodeByName("Form D").id}
+        sources={[testSource]}
+      />,
+    )
+
+    const testGroupList = screen.getByRole("list", { name: "Test group" })
+
+    expect(within(testGroupList).getByText("test_element")).toBeInTheDocument()
   })
 })
