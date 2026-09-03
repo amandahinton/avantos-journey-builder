@@ -38,11 +38,11 @@ export default function PrefillPanel({
   }
 
   return (
-    <section>
+    <section className="prefill-panel">
       <h2>{node.data.name}</h2>
 
       <h3>Fields</h3>
-      <ul aria-label="Fields">
+      <ul aria-label="Fields" className="field-rows" role="list">
         {fieldKeys.map((fieldKey) => {
           const sourceRef = Object.hasOwn(nodeMappings, fieldKey)
             ? nodeMappings[fieldKey]

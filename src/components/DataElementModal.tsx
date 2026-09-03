@@ -95,7 +95,7 @@ export default function DataElementModal({
             }) => (
               <details key={`${sourceId}:${groupId}`} open={hasActiveQuery}>
                 <summary>{groupLabel}</summary>
-                <ul aria-label={groupLabel}>
+                <ul aria-label={groupLabel} role="list">
                   {dataElements.map(
                     ({ id: elementId, label: elementLabel }) => {
                       const isSelected =
@@ -129,10 +129,11 @@ export default function DataElementModal({
           )}
         </div>
         <div className="modal-footer">
-          <button onClick={onClose} type="button">
+          <button className="secondary-button" onClick={onClose} type="button">
             Cancel
           </button>
           <button
+            className="primary-button"
             disabled={selectedSourceRef === null}
             onClick={handleSelectClick}
             type="button"

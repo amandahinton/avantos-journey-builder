@@ -16,7 +16,7 @@ export default function FormList({
   )
 
   return (
-    <ul>
+    <ul className="form-list" role="list">
       {sortedNodes.map((node) => (
         <li key={node.id}>
           <button

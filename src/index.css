@@ -1,12 +1,45 @@
 :root {
+  --accent: #1e6fd9;
+  --border: #d0d7de;
+  --hover-surface: #f0f3f6;
+  --muted-text: #57606a;
+  --selected-surface: #dbe9fb;
+  --surface: #fff;
+  --text: #1f2733;
+
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
-  color-scheme: light dark;
+  color-scheme: light;
+  color: var(--text);
+  background-color: #f6f7f9;
 }
 
 body {
   margin: 0;
-  padding: 1rem;
+  padding: 1.5rem 2rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  font: inherit;
 }
 
 .columns {
@@ -15,30 +48,177 @@ body {
   align-items: flex-start;
 }
 
-[aria-current="true"] {
+.columns > p {
+  color: var(--muted-text);
+}
+
+.form-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 11rem;
+}
+
+.form-list button {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.form-list button:hover {
+  border-color: var(--accent);
+}
+
+.form-list [aria-current="true"] {
+  background-color: var(--selected-surface);
+  border-color: var(--accent);
   font-weight: bold;
+}
+
+.prefill-panel {
+  flex: 1;
+  max-width: 30rem;
+}
+
+.prefill-panel h2 {
+  margin: 0 0 0.25rem;
+}
+
+.prefill-panel h3 {
+  margin: 1rem 0 0.5rem;
+}
+
+.field-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-row-unmapped {
+  background-color: var(--surface);
+  border: 1px dashed #b6c2cf;
+  border-radius: 0.5rem;
+  color: var(--muted-text);
+  cursor: pointer;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.field-row-unmapped:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.field-row-mapped {
+  align-items: center;
+  background-color: #eceff2;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0.5rem 0.6rem 0.75rem;
+}
+
+.clear-mapping-button {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--muted-text);
+  cursor: pointer;
+  display: flex;
+  height: 1.5rem;
+  justify-content: center;
+  width: 1.5rem;
+}
+
+.clear-mapping-button:hover {
+  background-color: #d7dde3;
+  color: var(--text);
 }
 
 /* backdrop clicks are detected as clicks on the dialog element itself, so
    it must own no visible pixels; padding and border live on the inner div */
 dialog {
+  background: transparent;
   border: none;
   padding: 0;
 }
 
+dialog::backdrop {
+  background-color: rgb(0 0 0 / 0.4);
+}
+
 dialog > div {
-  border: solid;
+  background-color: var(--surface);
+  border-radius: 0.75rem;
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 0.25);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
   height: min(32rem, 85vh);
-  padding: 1rem;
+  padding: 1.25rem;
   width: min(28rem, 90vw);
+}
+
+dialog h2,
+dialog h3 {
+  margin: 0;
+}
+
+dialog input[type="search"] {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
 }
 
 .data-group-tree {
   flex: 1;
   overflow-y: auto;
+}
+
+.data-group-tree p {
+  color: var(--muted-text);
+}
+
+.data-group-tree summary {
+  border-radius: 0.375rem;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+}
+
+.data-group-tree ul {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.5rem;
+}
+
+.data-group-tree li button {
+  background: none;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+  width: 100%;
+}
+
+.data-group-tree summary:hover,
+.data-group-tree li button:hover {
+  background-color: var(--hover-surface);
+}
+
+.data-group-tree li button[aria-pressed="true"] {
+  background-color: var(--selected-surface);
+  font-weight: bold;
 }
 
 .modal-footer {
@@ -47,6 +227,26 @@ dialog > div {
   justify-content: flex-end;
 }
 
-.data-group-tree [aria-pressed="true"] {
-  font-weight: bold;
+.modal-footer button {
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  padding: 0.45rem 1.1rem;
+}
+
+.secondary-button {
+  background-color: var(--surface);
+  color: var(--accent);
+}
+
+.primary-button {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.primary-button:disabled {
+  background-color: #e3e6ea;
+  border-color: #e3e6ea;
+  color: #8a939e;
+  cursor: default;
 }

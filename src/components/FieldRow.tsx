@@ -13,17 +13,23 @@ export default function FieldRow({
 }: FieldRowProps) {
   if (!mappedLabel) {
     return (
-      <button aria-label={`Map ${fieldKey}`} onClick={onOpen} type="button">
+      <button
+        aria-label={`Map ${fieldKey}`}
+        className="field-row-unmapped"
+        onClick={onOpen}
+        type="button"
+      >
         {fieldKey}
       </button>
     )
   }
 
   return (
-    <span>
+    <span className="field-row-mapped">
       {fieldKey}: {mappedLabel}
       <button
         aria-label={`Clear mapping for ${fieldKey}`}
+        className="clear-mapping-button"
         onClick={onClear}
         type="button"
       >
