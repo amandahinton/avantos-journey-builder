@@ -14,5 +14,4 @@ export const transitiveDependenciesSource: PrefillDataSource = {
     )
   },
   id: "transitive-dependencies",
-  label: "Transitive dependencies",
 }

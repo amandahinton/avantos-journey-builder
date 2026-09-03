@@ -28,5 +28,25 @@ dialog {
 
 dialog > div {
   border: solid;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: min(32rem, 85vh);
   padding: 1rem;
+  width: min(28rem, 90vw);
+}
+
+.data-group-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.data-group-tree [aria-pressed="true"] {
+  font-weight: bold;
 }

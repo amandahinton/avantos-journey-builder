@@ -33,6 +33,17 @@ function renderModal({
   )
 }
 
+const secondTestSource = makeTestSource({
+  dataGroups: [
+    {
+      dataElements: [{ id: "second_element", label: "second_element" }],
+      id: "second-group",
+      label: "Second group",
+    },
+  ],
+  id: "second-source",
+})
+
 describe("DataElementModal", () => {
   it("shows dialog title", () => {
     renderModal()
@@ -43,26 +54,8 @@ describe("DataElementModal", () => {
   })
 
   it("shows dataGroups from every given source implementing PrefillDataSource", () => {
-    const secondSource = makeTestSource({
-      dataGroups: [
-        {
-          dataElements: [{ id: "second_element", label: "second_element" }],
-          id: "second-group",
-          label: "Second group",
-        },
-      ],
-      id: "second-source",
-      label: "Second source",
-    })
+    renderModal({ sources: [makeTestSource(), secondTestSource] })
 
-    renderModal({ sources: [makeTestSource(), secondSource] })
-
-    expect(
-      screen.getByRole("heading", { name: "Test source" }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole("heading", { name: "Second source" }),
-    ).toBeInTheDocument()
     expect(screen.getByText("Test group")).toBeInTheDocument()
     expect(screen.getByText("Second group")).toBeInTheDocument()
   })
@@ -87,7 +80,7 @@ describe("DataElementModal", () => {
     expect(screen.getByText("test_element")).toBeVisible()
   })
 
-  it("calls onSelect with coordinates of clicked dataElement", async () => {
+  it("calls onSelect with coordinates of chosen dataElement when select button is clicked", async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
     renderModal({ onSelect })
@@ -95,11 +88,115 @@ describe("DataElementModal", () => {
     await user.click(screen.getByText("Test group"))
     await user.click(screen.getByRole("button", { name: "test_element" }))
 
+    expect(onSelect).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole("button", { name: "Select" }))
+
     expect(onSelect).toHaveBeenCalledExactlyOnceWith({
       elementId: "test_element",
       groupId: "test-group",
       sourceId: "test-source",
     })
+  })
+
+  it("disables select button until a dataElement is chosen", async () => {
+    const user = userEvent.setup()
+    renderModal()
+
+    const selectButton = screen.getByRole("button", { name: "Select" })
+
+    expect(selectButton).toBeDisabled()
+
+    await user.click(screen.getByText("Test group"))
+    await user.click(screen.getByRole("button", { name: "test_element" }))
+
+    expect(selectButton).toBeEnabled()
+  })
+
+  it("marks only the chosen dataElement as pressed", async () => {
+    const user = userEvent.setup()
+    const twoElementSource = makeTestSource({
+      dataGroups: [
+        {
+          dataElements: [
+            { id: "email", label: "email" },
+            { id: "name", label: "name" },
+          ],
+          id: "contact-group",
+          label: "Contact group",
+        },
+      ],
+    })
+    renderModal({ sources: [twoElementSource] })
+
+    await user.click(screen.getByText("Contact group"))
+    await user.click(screen.getByRole("button", { name: "email" }))
+
+    expect(
+      screen.getByRole("button", { name: "email", pressed: true }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "name", pressed: false }),
+    ).toBeInTheDocument()
+  })
+
+  it("shows only matching dataGroups, expanded, when query is typed", async () => {
+    const user = userEvent.setup()
+    renderModal({ sources: [makeTestSource(), secondTestSource] })
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search data elements" }),
+      "second",
+    )
+
+    expect(screen.queryByText("Test group")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "second_element" })).toBeVisible()
+  })
+
+  it("restores collapsed dataGroups when query is cleared", async () => {
+    const user = userEvent.setup()
+    renderModal({ sources: [makeTestSource(), secondTestSource] })
+    const searchInput = screen.getByRole("searchbox", {
+      name: "Search data elements",
+    })
+
+    await user.type(searchInput, "second")
+    await user.clear(searchInput)
+
+    expect(screen.getByText("Test group")).toBeInTheDocument()
+    expect(screen.getByText("second_element")).not.toBeVisible()
+  })
+
+  it("shows no-match message for query matching no dataGroup or dataElement", async () => {
+    const user = userEvent.setup()
+    renderModal()
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search data elements" }),
+      "zzz",
+    )
+
+    expect(screen.getByText('No data elements match "zzz"')).toBeInTheDocument()
+    expect(screen.queryByText("Test group")).not.toBeInTheDocument()
+  })
+
+  it("clears chosen dataElement when query changes, because it may no longer be visible", async () => {
+    const user = userEvent.setup()
+    renderModal()
+
+    await user.click(screen.getByText("Test group"))
+    await user.click(screen.getByRole("button", { name: "test_element" }))
+
+    const selectButton = screen.getByRole("button", { name: "Select" })
+
+    expect(selectButton).toBeEnabled()
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search data elements" }),
+      "t",
+    )
+
+    expect(selectButton).toBeDisabled()
   })
 
   it("calls onClose when cancel button is clicked", async () => {

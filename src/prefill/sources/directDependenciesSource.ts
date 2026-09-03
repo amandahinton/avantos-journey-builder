@@ -11,5 +11,4 @@ export const directDependenciesSource: PrefillDataSource = {
     )
   },
   id: "direct-dependencies",
-  label: "Direct dependencies",
 }

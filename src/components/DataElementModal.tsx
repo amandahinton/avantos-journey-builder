@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { filterDataGroups, isActiveQuery } from "../prefill/filterDataGroups"
 import type { MouseEvent } from "react"
 import type { PrefillDataSource, SourceRef } from "../prefill/types"
 import type { BlueprintGraph } from "../types/graph"
@@ -19,6 +20,10 @@ export default function DataElementModal({
   sources,
 }: DataElementModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const [query, setQuery] = useState("")
+  const [selectedSourceRef, setSelectedSourceRef] = useState<SourceRef | null>(
+    null,
+  )
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -32,6 +37,36 @@ export default function DataElementModal({
     }
   }
 
+  function handleQueryChange(nextQuery: string) {
+    setQuery(nextQuery)
+    // new query can hide selected element; hidden selections must not commit
+    setSelectedSourceRef(null)
+  }
+
+  function handleSelectClick() {
+    if (selectedSourceRef === null) return
+    onSelect(selectedSourceRef)
+  }
+
+  // modal-lifetime inputs: run getDataGroups once per open, not per keystroke
+  const sourceDataGroups = useMemo(
+    () =>
+      sources.map((dataSource) => ({
+        dataGroups: dataSource.getDataGroups({ graph, nodeId }),
+        sourceId: dataSource.id,
+      })),
+    [graph, nodeId, sources],
+  )
+
+  const hasActiveQuery = isActiveQuery(query)
+  const selectableDataGroups = sourceDataGroups.flatMap(
+    ({ dataGroups, sourceId }) =>
+      filterDataGroups({ dataGroups, query }).map((dataGroup) => ({
+        dataGroup,
+        sourceId,
+      })),
+  )
+
   return (
     <dialog
       aria-labelledby="data-element-modal-title"
@@ -41,41 +76,70 @@ export default function DataElementModal({
     >
       <div>
         <h2 id="data-element-modal-title">Select data element to map</h2>
-        {sources.map((dataSource) => {
-          const { id: sourceId, label: sourceLabel } = dataSource
+        <h3>Available data</h3>
+        <input
+          aria-label="Search data elements"
+          onChange={(event) => handleQueryChange(event.target.value)}
+          placeholder="Search"
+          type="search"
+          value={query}
+        />
+        <div className="data-group-tree">
+          {hasActiveQuery && selectableDataGroups.length === 0 && (
+            <p>No data elements match "{query.trim()}"</p>
+          )}
+          {selectableDataGroups.map(
+            ({
+              dataGroup: { dataElements, id: groupId, label: groupLabel },
+              sourceId,
+            }) => (
+              <details key={`${sourceId}:${groupId}`} open={hasActiveQuery}>
+                <summary>{groupLabel}</summary>
+                <ul aria-label={groupLabel}>
+                  {dataElements.map(
+                    ({ id: elementId, label: elementLabel }) => {
+                      const isSelected =
+                        selectedSourceRef !== null &&
+                        selectedSourceRef.elementId === elementId &&
+                        selectedSourceRef.groupId === groupId &&
+                        selectedSourceRef.sourceId === sourceId
 
-          return (
-            <section key={sourceId}>
-              <h3>{sourceLabel}</h3>
-              {dataSource
-                .getDataGroups({ graph, nodeId })
-                .map(({ dataElements, id: groupId, label: groupLabel }) => (
-                  <details key={groupId}>
-                    <summary>{groupLabel}</summary>
-                    <ul aria-label={groupLabel}>
-                      {dataElements.map(
-                        ({ id: elementId, label: elementLabel }) => (
-                          <li key={elementId}>
-                            <button
-                              onClick={() =>
-                                onSelect({ elementId, groupId, sourceId })
-                              }
-                              type="button"
-                            >
-                              {elementLabel}
-                            </button>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </details>
-                ))}
-            </section>
-          )
-        })}
-        <button onClick={onClose} type="button">
-          Cancel
-        </button>
+                      return (
+                        <li key={elementId}>
+                          <button
+                            aria-pressed={isSelected}
+                            onClick={() =>
+                              setSelectedSourceRef({
+                                elementId,
+                                groupId,
+                                sourceId,
+                              })
+                            }
+                            type="button"
+                          >
+                            {elementLabel}
+                          </button>
+                        </li>
+                      )
+                    },
+                  )}
+                </ul>
+              </details>
+            ),
+          )}
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose} type="button">
+            Cancel
+          </button>
+          <button
+            disabled={selectedSourceRef === null}
+            onClick={handleSelectClick}
+            type="button"
+          >
+            Select
+          </button>
+        </div>
       </div>
     </dialog>
   )

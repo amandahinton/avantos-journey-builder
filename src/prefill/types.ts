@@ -19,7 +19,6 @@ export interface DataSourceParams {
 export interface PrefillDataSource {
   getDataGroups(params: DataSourceParams): DataGroup[]
   id: string
-  label: string
 }
 
 // object keyed by node id (not form id), whose values are objects keyed by field key

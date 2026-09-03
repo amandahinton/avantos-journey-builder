@@ -219,6 +219,7 @@ describe("PrefillPanel", () => {
     await user.click(
       within(formBGroupList).getByRole("button", { name: "email" }),
     )
+    await user.click(within(dialog).getByRole("button", { name: "Select" }))
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
 
@@ -272,7 +273,9 @@ describe("PrefillPanel", () => {
 
     const dialog = screen.getByRole("dialog")
 
-    expect(screen.queryByText("Global data")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("list", { name: "Global" }),
+    ).not.toBeInTheDocument()
     expect(
       within(dialog).getByRole("list", { name: "Form B" }),
     ).toBeInTheDocument()

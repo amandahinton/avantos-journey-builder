@@ -17,5 +17,4 @@ export const globalDataSource: PrefillDataSource = {
     ]
   },
   id: "global-data",
-  label: "Global data",
 }

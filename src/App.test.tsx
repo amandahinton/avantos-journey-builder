@@ -95,6 +95,7 @@ describe("App", () => {
     await user.click(
       within(formAGroupList).getByRole("button", { name: "email" }),
     )
+    await user.click(within(dialog).getByRole("button", { name: "Select" }))
 
     const fieldsList = screen.getByRole("list", { name: "Fields" })
 
