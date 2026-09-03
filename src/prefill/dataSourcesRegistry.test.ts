@@ -4,10 +4,11 @@ import { findNodeByName } from "../graph/testHelpers"
 import { dataSourcesRegistry } from "./dataSourcesRegistry"
 
 describe("dataSourcesRegistry", () => {
-  it("lists direct, transitive, then global sources in display order", () => {
+  it("lists action, direct, transitive, then global sources in display order", () => {
     const dataSourceIds = dataSourcesRegistry.map((dataSource) => dataSource.id)
 
     expect(dataSourceIds).toEqual([
+      "action-properties",
       "direct-dependencies",
       "transitive-dependencies",
       "global-data",
@@ -21,6 +22,11 @@ describe("dataSourcesRegistry", () => {
         .map((dataGroup) => dataGroup.label),
     )
 
-    expect(dataGroupLabels).toEqual(["Form B", "Form A", "Global"])
+    expect(dataGroupLabels).toEqual([
+      "Onboard Customer 0",
+      "Form B",
+      "Form A",
+      "Global",
+    ])
   })
 })
