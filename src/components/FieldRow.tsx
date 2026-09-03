@@ -27,7 +27,7 @@ export default function FieldRow({
         onClick={onClear}
         type="button"
       >
-        ✕
+        <span aria-hidden="true">✕</span>
       </button>
     </span>
   )

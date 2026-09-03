@@ -41,7 +41,6 @@ export function makeTestNode({
 
 export function makeTestGraph(nodes: GraphNode[]): BlueprintGraph {
   return {
-    edges: [],
     forms: [],
     id: "test-graph",
     name: "Test graph",

@@ -2,7 +2,6 @@
 // Payload structure and how ids relate - docs/data-model.md
 
 export interface BlueprintGraph {
-  edges: GraphEdge[]
   forms: FormDefinition[]
   id: string
   name: string
@@ -26,11 +25,6 @@ export interface FormDefinition {
   field_schema: FieldSchema
   id: string
   name: string
-}
-
-export interface GraphEdge {
-  source: string
-  target: string
 }
 
 export interface GraphNode {

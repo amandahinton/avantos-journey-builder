@@ -6,7 +6,7 @@ as `src/fixtures/graph.json` and typed in `src/types/graph.ts`.
 
 ## The payload is one journey ("Onboard Customer 0") described as a graph
 
-The top-level keys typed for this app are `id`, `name`, `nodes[]`, `forms[]`, and `edges[]`. Others, including `branches`, `triggers`, `$schema`, `tenant_id`, `category`, `description`, are not used.
+The top-level keys typed for this app are `id`, `name`, `nodes[]`, and `forms[]`. Others, including `edges[]`, `branches`, `triggers`, `$schema`, `tenant_id`, `category`, `description`, are not used.
 
 Blueprint Graph
 
@@ -28,8 +28,8 @@ Blueprint Graph
     - standard JSON Schema
     - `forms[].field_schema.properties` map holds one entry per field
       - `forms[].field_schema.properties` values are of type `FieldDefinition`
-- `edges` of type `GraphEdge`
-  - a `{ source, target }` pair of node ids
+- `edges` is not typed or read
+  - each entry is a `{ source, target }` pair of node ids
   - restates same arrows as `prerequisites`
 
 Traversal reads `prerequisites` because it is already the list of upstream nodes a node depends on. `edges` exists for drawing the arrow diagram; using it would require scanning all edges for `target === nodeId` to rebuild that same list.
