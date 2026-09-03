@@ -79,11 +79,15 @@ Form A ──► Form B ──► Form D ──┐
 - Every referenced id must resolve
   - Each `prerequisites` entry must name a `nodes[].id`, and each `component_id` must name a `forms[].id`
   - A reference that resolves to nothing means the payload is corrupt; lookups throw an error naming the missing id, the referring node, and the graph rather than returning a partial result
-- Nodes arrive unsorted: payload order is F, D, A, C, B, E.
+- Stored prefill mappings must resolve the same way
+  - SourceRefs resolve through the registry at render; an unresolvable ref throws
+  - Safe while mappings are in-memory only and cannot outlive a page load
+  - Persistence would change this: stale refs should then degrade to unmapped, not throw
+- Nodes arrive unsorted: payload order is F, D, A, C, B, E
 - Traversal must deduplicate
   - F reaches A by two paths (via D and via E)
   - Must guard against cycles with a visited set even though the data is a DAG
-- Every form has the same fields: `button`, `dynamic_checkbox_group`, `dynamic_object`, `email`, `id`, `multi_select`, `name`, `notes`.
+- Every form has the same fields: `button`, `dynamic_checkbox_group`, `dynamic_object`, `email`, `id`, `multi_select`, `name`, `notes`
 
 ## Mock server vs. the real API
 
@@ -96,6 +100,6 @@ on:
 
 - the real endpoint has an extra `{blueprint_version_id}` path segment
 - the spec names the top-level fields `blueprint_id`/`blueprint_name` where the
-  mock's JSON has `id`/`name`.
+  mock's JSON has `id`/`name`
 
 The fixture is treated as truth in this app.

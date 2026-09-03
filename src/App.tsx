@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useBlueprintGraph } from "./api/useBlueprintGraph"
 import FormList from "./components/FormList"
 import PrefillPanel from "./components/PrefillPanel"
+import PrefillProvider from "./prefill/PrefillProvider"
 import { dataSourcesRegistry } from "./prefill/dataSourcesRegistry"
 
 const TENANT_ID = "1"
@@ -20,22 +21,24 @@ export default function App() {
       {error && <p role="alert">{error}</p>}
       {!error && !graph && <p>Loading…</p>}
       {graph && (
-        <div className="columns">
-          <FormList
-            nodes={graph.nodes}
-            onSelect={setSelectedNodeId}
-            selectedNodeId={selectedNodeId}
-          />
-          {selectedNodeId ? (
-            <PrefillPanel
-              graph={graph}
-              nodeId={selectedNodeId}
-              sources={dataSourcesRegistry}
+        <PrefillProvider>
+          <div className="columns">
+            <FormList
+              nodes={graph.nodes}
+              onSelect={setSelectedNodeId}
+              selectedNodeId={selectedNodeId}
             />
-          ) : (
-            <p>Select a form</p>
-          )}
-        </div>
+            {selectedNodeId ? (
+              <PrefillPanel
+                graph={graph}
+                nodeId={selectedNodeId}
+                sources={dataSourcesRegistry}
+              />
+            ) : (
+              <p>Select a form</p>
+            )}
+          </div>
+        </PrefillProvider>
       )}
     </>
   )

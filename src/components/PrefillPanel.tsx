@@ -1,4 +1,7 @@
 import { getFormForNode, getNodeById } from "../graph/lookup"
+import { deriveSourceRefLabel } from "../prefill/deriveSourceRefLabel"
+import { usePrefill } from "../prefill/usePrefill"
+import FieldRow from "./FieldRow"
 import type { PrefillDataSource } from "../prefill/types"
 import type { BlueprintGraph } from "../types/graph"
 
@@ -13,9 +16,11 @@ export default function PrefillPanel({
   nodeId,
   sources,
 }: PrefillPanelProps) {
+  const { dispatch, prefillMappings } = usePrefill()
   const node = getNodeById({ graph, nodeId })
   const form = getFormForNode({ graph, node })
   const fieldKeys = Object.keys(form.field_schema.properties)
+  const nodeMappings = prefillMappings[nodeId] ?? {}
 
   return (
     <section>
@@ -23,9 +28,26 @@ export default function PrefillPanel({
 
       <h3>Fields</h3>
       <ul aria-label="Fields">
-        {fieldKeys.map((fieldKey) => (
-          <li key={fieldKey}>{fieldKey}</li>
-        ))}
+        {fieldKeys.map((fieldKey) => {
+          const sourceRef = Object.hasOwn(nodeMappings, fieldKey)
+            ? nodeMappings[fieldKey]
+            : undefined
+          const mappedLabel = sourceRef
+            ? deriveSourceRefLabel({ graph, nodeId, sourceRef, sources })
+            : null
+
+          return (
+            <li key={fieldKey}>
+              <FieldRow
+                fieldKey={fieldKey}
+                mappedLabel={mappedLabel}
+                onClear={() =>
+                  dispatch({ fieldKey, nodeId, type: "CLEAR_MAPPING" })
+                }
+              />
+            </li>
+          )
+        })}
       </ul>
 
       <h3>Available data</h3>

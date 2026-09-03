@@ -22,6 +22,9 @@ export interface PrefillDataSource {
   label: string
 }
 
+// object keyed by node id (not form id), whose values are objects keyed by field key
+export type PrefillMappings = Record<string, Record<string, SourceRef>>
+
 export interface SourceRef {
   elementId: string
   groupId: string

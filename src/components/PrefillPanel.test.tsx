@@ -1,30 +1,61 @@
 import { render, screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { describe, expect, it } from "vitest"
 import graph from "../fixtures/graph.json"
-import { findNodeByName } from "../graph/testHelpers"
+import {
+  findNodeByName,
+  makeTestGraph,
+  makeTestNode,
+} from "../graph/testHelpers"
+import PrefillProvider from "../prefill/PrefillProvider"
 import { dataSourcesRegistry } from "../prefill/dataSourcesRegistry"
 import PrefillPanel from "./PrefillPanel"
-import type { PrefillDataSource } from "../prefill/types"
+import type { PrefillDataSource, PrefillMappings } from "../prefill/types"
+import type { FormDefinition } from "../types/graph"
 
-function renderPanelFor(name: string) {
+interface RenderPanelParams {
+  formName: string
+  initialMappings?: PrefillMappings
+  sources?: PrefillDataSource[]
+}
+
+function renderPanelFor({
+  formName,
+  initialMappings,
+  sources = dataSourcesRegistry,
+}: RenderPanelParams) {
   render(
-    <PrefillPanel
-      graph={graph}
-      nodeId={findNodeByName(name).id}
-      sources={dataSourcesRegistry}
-    />,
+    <PrefillProvider initialMappings={initialMappings}>
+      <PrefillPanel
+        graph={graph}
+        nodeId={findNodeByName(formName).id}
+        sources={sources}
+      />
+    </PrefillProvider>,
   )
+}
+
+function makeFormDEmailFromFormBMapping(): PrefillMappings {
+  return {
+    [findNodeByName("Form D").id]: {
+      email: {
+        elementId: "email",
+        groupId: findNodeByName("Form B").id,
+        sourceId: "direct-dependencies",
+      },
+    },
+  }
 }
 
 describe("PrefillPanel", () => {
   it("shows given form name as heading", () => {
-    renderPanelFor("Form D")
+    renderPanelFor({ formName: "Form D" })
 
     expect(screen.getByRole("heading", { name: "Form D" })).toBeInTheDocument()
   })
 
   it("lists field keys of form template in schema order", () => {
-    renderPanelFor("Form D")
+    renderPanelFor({ formName: "Form D" })
 
     const fieldsList = screen.getByRole("list", { name: "Fields" })
     const fieldKeys = within(fieldsList)
@@ -43,8 +74,128 @@ describe("PrefillPanel", () => {
     ])
   })
 
+  it("lists every field key in schema order, though one field is mapped", () => {
+    renderPanelFor({
+      formName: "Form D",
+      initialMappings: makeFormDEmailFromFormBMapping(),
+    })
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+    const rowTexts = within(fieldsList)
+      .getAllByRole("listitem")
+      .map((listItem) => listItem.textContent)
+
+    expect(rowTexts).toEqual([
+      "button",
+      "dynamic_checkbox_group",
+      "dynamic_object",
+      "email: Form B.email✕",
+      "id",
+      "multi_select",
+      "name",
+      "notes",
+    ])
+  })
+
+  it("shows mapped row with label derived from stored sourceRef", () => {
+    renderPanelFor({
+      formName: "Form D",
+      initialMappings: makeFormDEmailFromFormBMapping(),
+    })
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+
+    expect(
+      within(fieldsList).getByText("email: Form B.email"),
+    ).toBeInTheDocument()
+  })
+
+  it("returns row to unmapped state when its clear button is clicked", async () => {
+    const user = userEvent.setup()
+    renderPanelFor({
+      formName: "Form D",
+      initialMappings: makeFormDEmailFromFormBMapping(),
+    })
+
+    await user.click(
+      screen.getByRole("button", { name: "Clear mapping for email" }),
+    )
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+
+    expect(
+      within(fieldsList).queryByText("email: Form B.email"),
+    ).not.toBeInTheDocument()
+    expect(within(fieldsList).getByText("email")).toBeInTheDocument()
+  })
+
+  it("clears only the clicked row, leaving other mapped rows intact", async () => {
+    const user = userEvent.setup()
+    const formDNodeId = findNodeByName("Form D").id
+    renderPanelFor({
+      formName: "Form D",
+      initialMappings: {
+        [formDNodeId]: {
+          email: {
+            elementId: "email",
+            groupId: findNodeByName("Form B").id,
+            sourceId: "direct-dependencies",
+          },
+          name: {
+            elementId: "current_user_name",
+            groupId: "global",
+            sourceId: "global-data",
+          },
+        },
+      },
+    })
+
+    await user.click(
+      screen.getByRole("button", { name: "Clear mapping for email" }),
+    )
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+
+    expect(
+      within(fieldsList).queryByText("email: Form B.email"),
+    ).not.toBeInTheDocument()
+    expect(
+      within(fieldsList).getByText("name: Global.current_user_name"),
+    ).toBeInTheDocument()
+  })
+
+  it("shows unmapped row for field key that collides with an Object.prototype key", () => {
+    const constructorFieldForm: FormDefinition = {
+      field_schema: {
+        properties: {
+          constructor: { avantos_type: "short-text", type: "string" },
+        },
+        type: "object",
+      },
+      id: "form-template",
+      name: "test form",
+    }
+    const testGraph = {
+      ...makeTestGraph([makeTestNode({ id: "a", prerequisites: [] })]),
+      forms: [constructorFieldForm],
+    }
+
+    render(
+      <PrefillProvider>
+        <PrefillPanel graph={testGraph} nodeId="a" sources={[]} />
+      </PrefillProvider>,
+    )
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+
+    expect(within(fieldsList).getByText("constructor")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Clear mapping for constructor" }),
+    ).not.toBeInTheDocument()
+  })
+
   it("shows dataGroups from every given source for Form D, which has both direct and transitive dependencies", () => {
-    renderPanelFor("Form D")
+    renderPanelFor({ formName: "Form D" })
 
     const formBList = screen.getByRole("list", { name: "Form B" })
     const formAList = screen.getByRole("list", { name: "Form A" })
@@ -62,13 +213,7 @@ describe("PrefillPanel", () => {
       (dataSource) => dataSource.id !== "global-data",
     )
 
-    render(
-      <PrefillPanel
-        graph={graph}
-        nodeId={findNodeByName("Form D").id}
-        sources={sourcesWithoutGlobal}
-      />,
-    )
+    renderPanelFor({ formName: "Form D", sources: sourcesWithoutGlobal })
 
     expect(screen.queryByText("Global data")).not.toBeInTheDocument()
     expect(screen.getByRole("list", { name: "Form B" })).toBeInTheDocument()
@@ -89,13 +234,7 @@ describe("PrefillPanel", () => {
       label: "Test source",
     }
 
-    render(
-      <PrefillPanel
-        graph={graph}
-        nodeId={findNodeByName("Form D").id}
-        sources={[testSource]}
-      />,
-    )
+    renderPanelFor({ formName: "Form D", sources: [testSource] })
 
     const testGroupList = screen.getByRole("list", { name: "Test group" })
 
