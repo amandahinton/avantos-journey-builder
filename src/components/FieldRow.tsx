@@ -2,18 +2,23 @@ interface FieldRowProps {
   fieldKey: string
   mappedLabel: string | null
   onClear: () => void
+  onOpen: () => void
 }
 
 export default function FieldRow({
   fieldKey,
   mappedLabel,
   onClear,
+  onOpen,
 }: FieldRowProps) {
   if (!mappedLabel) {
-    return <span>{fieldKey}</span>
+    return (
+      <button aria-label={`Map ${fieldKey}`} onClick={onOpen} type="button">
+        {fieldKey}
+      </button>
+    )
   }
 
-  // TODO: not in browser until next commit (proven in tests)
   return (
     <span>
       {fieldKey}: {mappedLabel}

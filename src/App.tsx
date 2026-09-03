@@ -31,6 +31,7 @@ export default function App() {
             {selectedNodeId ? (
               <PrefillPanel
                 graph={graph}
+                key={selectedNodeId}
                 nodeId={selectedNodeId}
                 sources={dataSourcesRegistry}
               />

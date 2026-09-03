@@ -9,6 +9,7 @@ import {
 } from "../graph/testHelpers"
 import PrefillProvider from "../prefill/PrefillProvider"
 import { dataSourcesRegistry } from "../prefill/dataSourcesRegistry"
+import { makeTestSource } from "../prefill/testHelpers"
 import PrefillPanel from "./PrefillPanel"
 import type { PrefillDataSource, PrefillMappings } from "../prefill/types"
 import type { FormDefinition } from "../types/graph"
@@ -194,12 +195,64 @@ describe("PrefillPanel", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("shows dataGroups from every given source for Form D, which has both direct and transitive dependencies", () => {
+  it("opens data element modal when unmapped field button is clicked", async () => {
+    const user = userEvent.setup()
     renderPanelFor({ formName: "Form D" })
 
-    const formBList = screen.getByRole("list", { name: "Form B" })
-    const formAList = screen.getByRole("list", { name: "Form A" })
-    const globalList = screen.getByRole("list", { name: "Global" })
+    await user.click(screen.getByRole("button", { name: "Map email" }))
+
+    expect(
+      screen.getByRole("dialog", { name: "Select data element to map" }),
+    ).toBeInTheDocument()
+  })
+
+  it("maps clicked field from modal selection and closes modal", async () => {
+    const user = userEvent.setup()
+    renderPanelFor({ formName: "Form D" })
+
+    await user.click(screen.getByRole("button", { name: "Map email" }))
+
+    const dialog = screen.getByRole("dialog")
+    await user.click(within(dialog).getByText("Form B"))
+
+    const formBGroupList = within(dialog).getByRole("list", { name: "Form B" })
+    await user.click(
+      within(formBGroupList).getByRole("button", { name: "email" }),
+    )
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+    expect(
+      within(fieldsList).getByText("email: Form B.email"),
+    ).toBeInTheDocument()
+  })
+
+  it("closes modal leaving field unmapped when cancel is clicked", async () => {
+    const user = userEvent.setup()
+    renderPanelFor({ formName: "Form D" })
+
+    await user.click(screen.getByRole("button", { name: "Map email" }))
+    await user.click(screen.getByRole("button", { name: "Cancel" }))
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+    expect(
+      within(fieldsList).queryByText("email: Form B.email"),
+    ).not.toBeInTheDocument()
+  })
+
+  it("shows dataGroups from every given source in the modal for Form D, which has both direct and transitive dependencies", async () => {
+    const user = userEvent.setup()
+    renderPanelFor({ formName: "Form D" })
+
+    await user.click(screen.getByRole("button", { name: "Map email" }))
+
+    const dialog = screen.getByRole("dialog")
+    const formBList = within(dialog).getByRole("list", { name: "Form B" })
+    const formAList = within(dialog).getByRole("list", { name: "Form A" })
+    const globalList = within(dialog).getByRole("list", { name: "Global" })
 
     expect(within(formBList).getByText("email")).toBeInTheDocument()
     expect(within(formAList).getByText("email")).toBeInTheDocument()
@@ -208,35 +261,33 @@ describe("PrefillPanel", () => {
     ).toBeInTheDocument()
   })
 
-  it("shows only dataGroups from given sources for Form D, which has both direct and transitive dependencies", () => {
+  it("shows only dataGroups from given sources in the modal for Form D, which has both direct and transitive dependencies", async () => {
+    const user = userEvent.setup()
     const sourcesWithoutGlobal = dataSourcesRegistry.filter(
       (dataSource) => dataSource.id !== "global-data",
     )
-
     renderPanelFor({ formName: "Form D", sources: sourcesWithoutGlobal })
 
+    await user.click(screen.getByRole("button", { name: "Map email" }))
+
+    const dialog = screen.getByRole("dialog")
+
     expect(screen.queryByText("Global data")).not.toBeInTheDocument()
-    expect(screen.getByRole("list", { name: "Form B" })).toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("list", { name: "Form B" }),
+    ).toBeInTheDocument()
   })
 
-  it("shows dataGroups from any source satisfying the contract for given node", () => {
-    const testSource: PrefillDataSource = {
-      getDataGroups() {
-        return [
-          {
-            dataElements: [{ id: "test_element", label: "test_element" }],
-            id: "test-group",
-            label: "Test group",
-          },
-        ]
-      },
-      id: "test-source",
-      label: "Test source",
-    }
+  it("shows dataGroups from any source implementing PrefillDataSource for given node", async () => {
+    const user = userEvent.setup()
+    renderPanelFor({ formName: "Form D", sources: [makeTestSource()] })
 
-    renderPanelFor({ formName: "Form D", sources: [testSource] })
+    await user.click(screen.getByRole("button", { name: "Map email" }))
 
-    const testGroupList = screen.getByRole("list", { name: "Test group" })
+    const dialog = screen.getByRole("dialog")
+    const testGroupList = within(dialog).getByRole("list", {
+      name: "Test group",
+    })
 
     expect(within(testGroupList).getByText("test_element")).toBeInTheDocument()
   })

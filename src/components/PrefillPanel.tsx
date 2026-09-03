@@ -1,8 +1,10 @@
+import { useState } from "react"
 import { getFormForNode, getNodeById } from "../graph/lookup"
 import { deriveSourceRefLabel } from "../prefill/deriveSourceRefLabel"
 import { usePrefill } from "../prefill/usePrefill"
+import DataElementModal from "./DataElementModal"
 import FieldRow from "./FieldRow"
-import type { PrefillDataSource } from "../prefill/types"
+import type { PrefillDataSource, SourceRef } from "../prefill/types"
 import type { BlueprintGraph } from "../types/graph"
 
 interface PrefillPanelProps {
@@ -11,16 +13,29 @@ interface PrefillPanelProps {
   sources: PrefillDataSource[]
 }
 
+interface SelectedMappingParams {
+  fieldKey: string
+  sourceRef: SourceRef
+}
+
 export default function PrefillPanel({
   graph,
   nodeId,
   sources,
 }: PrefillPanelProps) {
   const { dispatch, prefillMappings } = usePrefill()
+  const [fieldKeyBeingMapped, setFieldKeyBeingMapped] = useState<string | null>(
+    null,
+  )
   const node = getNodeById({ graph, nodeId })
   const form = getFormForNode({ graph, node })
   const fieldKeys = Object.keys(form.field_schema.properties)
   const nodeMappings = prefillMappings[nodeId] ?? {}
+
+  function handleSelect({ fieldKey, sourceRef }: SelectedMappingParams) {
+    dispatch({ fieldKey, nodeId, sourceRef, type: "SET_MAPPING" })
+    setFieldKeyBeingMapped(null)
+  }
 
   return (
     <section>
@@ -44,28 +59,24 @@ export default function PrefillPanel({
                 onClear={() =>
                   dispatch({ fieldKey, nodeId, type: "CLEAR_MAPPING" })
                 }
+                onOpen={() => setFieldKeyBeingMapped(fieldKey)}
               />
             </li>
           )
         })}
       </ul>
 
-      <h3>Available data</h3>
-      {sources.map((dataSource) => (
-        <section key={dataSource.id}>
-          <h4>{dataSource.label}</h4>
-          {dataSource.getDataGroups({ graph, nodeId }).map((dataGroup) => (
-            <div key={dataGroup.id}>
-              <p>{dataGroup.label}</p>
-              <ul aria-label={dataGroup.label}>
-                {dataGroup.dataElements.map((dataElement) => (
-                  <li key={dataElement.id}>{dataElement.label}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      ))}
+      {fieldKeyBeingMapped !== null && (
+        <DataElementModal
+          graph={graph}
+          nodeId={nodeId}
+          onClose={() => setFieldKeyBeingMapped(null)}
+          onSelect={(sourceRef) =>
+            handleSelect({ fieldKey: fieldKeyBeingMapped, sourceRef })
+          }
+          sources={sources}
+        />
+      )}
     </section>
   )
 }

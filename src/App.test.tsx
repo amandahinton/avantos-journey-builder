@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import App from "./App"
@@ -64,14 +64,55 @@ describe("App", () => {
     expect(screen.queryByText("Select a form")).not.toBeInTheDocument()
   })
 
-  it("shows available data for clicked form", async () => {
+  it("shows available data in the modal for clicked field", async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(await screen.findByRole("button", { name: "Form D" }))
+    await user.click(screen.getByRole("button", { name: "Map email" }))
 
-    expect(screen.getByRole("list", { name: "Form B" })).toBeInTheDocument()
-    expect(screen.getByRole("list", { name: "Global" })).toBeInTheDocument()
+    const dialog = screen.getByRole("dialog")
+
+    expect(
+      within(dialog).getByRole("list", { name: "Form B" }),
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).getByRole("list", { name: "Global" }),
+    ).toBeInTheDocument()
+  })
+
+  it("maps field from modal selection and clears it, completing the prefill flow", async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(await screen.findByRole("button", { name: "Form D" }))
+    await user.click(screen.getByRole("button", { name: "Map email" }))
+
+    const dialog = screen.getByRole("dialog")
+    await user.click(within(dialog).getByText("Form A"))
+
+    const formAGroupList = within(dialog).getByRole("list", { name: "Form A" })
+    await user.click(
+      within(formAGroupList).getByRole("button", { name: "email" }),
+    )
+
+    const fieldsList = screen.getByRole("list", { name: "Fields" })
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(
+      within(fieldsList).getByText("email: Form A.email"),
+    ).toBeInTheDocument()
+
+    await user.click(
+      screen.getByRole("button", { name: "Clear mapping for email" }),
+    )
+
+    expect(
+      within(fieldsList).queryByText("email: Form A.email"),
+    ).not.toBeInTheDocument()
+    expect(
+      within(fieldsList).getByRole("button", { name: "Map email" }),
+    ).toBeInTheDocument()
   })
 
   it("shows loading message, then error message when fetch fails", async () => {

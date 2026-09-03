@@ -18,3 +18,15 @@ body {
 [aria-current="true"] {
   font-weight: bold;
 }
+
+/* backdrop clicks are detected as clicks on the dialog element itself, so
+   it must own no visible pixels; padding and border live on the inner div */
+dialog {
+  border: none;
+  padding: 0;
+}
+
+dialog > div {
+  border: solid;
+  padding: 1rem;
+}
